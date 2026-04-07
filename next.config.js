@@ -1,16 +1,11 @@
-/** @type {import('next').NextConfig} */
+const path = require('path')
+
 const nextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'api.telegram.org',
-      },
-    ],
+  webpack: (config) => {
+    config.resolve.alias['@'] = path.resolve(__dirname)
+    // yoki src ishlatayotgan bo'lsangiz:
+    // config.resolve.alias['@'] = path.resolve(__dirname, 'src')
+    return config
   },
 }
 
