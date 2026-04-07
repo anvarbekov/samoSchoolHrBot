@@ -1,0 +1,153 @@
+/* app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0f0f1a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a45;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #5265f5;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-surface-card border border-surface-border rounded-2xl backdrop-blur-sm;
+    background: linear-gradient(135deg, rgba(22, 22, 42, 0.9) 0%, rgba(15, 15, 26, 0.95) 100%);
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-400 via-brand-300 to-purple-400 bg-clip-text text-transparent;
+  }
+
+  .glow-border {
+    box-shadow: 0 0 0 1px rgba(82, 101, 245, 0.3), 0 0 20px rgba(82, 101, 245, 0.1);
+  }
+
+  .stat-card {
+    @apply glass-card p-6 hover:glow-border transition-all duration-300;
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-surface-hover transition-all duration-200;
+  }
+
+  .sidebar-link.active {
+    @apply text-white bg-brand-600/20 border border-brand-500/30;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  }
+
+  .btn-primary {
+    @apply bg-brand-600 hover:bg-brand-500 text-white font-semibold px-6 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-2;
+  }
+
+  .table-row-hover {
+    @apply hover:bg-surface-hover transition-colors duration-150 cursor-pointer;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Mesh gradient background */
+.mesh-bg {
+  background-color: #0f0f1a;
+  background-image:
+    radial-gradient(at 20% 50%, rgba(82, 101, 245, 0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(124, 58, 237, 0.06) 0px, transparent 50%),
+    radial-gradient(at 50% 90%, rgba(6, 214, 160, 0.04) 0px, transparent 50%);
+}
+
+/* Animated gradient border */
+@keyframes gradientBorder {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #5265f5, #7c3aed, #06d6a0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  background-size: 200% 200%;
+  animation: gradientBorder 4s ease infinite;
+}
+
+/* Modal animations */
+.modal-enter {
+  animation: modalEnter 0.3s ease-out;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Loading skeleton */
+.skeleton-line {
+  @apply h-4 rounded-lg shimmer bg-surface-border;
+}

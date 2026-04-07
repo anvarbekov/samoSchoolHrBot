@@ -1,0 +1,35 @@
+{
+  "name": "hr-recruitment-bot",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "firebase": "^10.12.0",
+    "firebase-admin": "^12.2.0",
+    "node-telegram-bot-api": "^0.66.0",
+    "cloudinary": "^2.3.0",
+    "googleapis": "^144.0.0",
+    "axios": "^1.7.0",
+    "date-fns": "^3.6.0",
+    "react-hot-toast": "^2.4.1",
+    "framer-motion": "^11.2.0",
+    "lucide-react": "^0.395.0",
+    "recharts": "^2.12.7"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "daisyui": "^4.12.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.0"
+  }
+}
