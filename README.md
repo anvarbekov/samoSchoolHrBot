@@ -192,3 +192,4 @@ service cloud.firestore {
 
 **Muallif:** HR Recruitment Bot System
 **Versiya:** 1.0.0
+# samoSchoolHrBot
