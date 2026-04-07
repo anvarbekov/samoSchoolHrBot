@@ -1,13 +1,13 @@
-// Suspense bilan wrap qilingan default export
-import CandidatesPage from "./CandidatesContent"
+// app/admin/candidates/page.jsx
+import { Suspense } from 'react'
+import CandidatesContent from './CandidatesContent'
 
 export default function CandidatesPage() {
   return (
+    // Suspense orqali useSearchParams xatoligini bartaraf etamiz
     <Suspense fallback={
-      <div className="p-8 space-y-3">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-16 rounded-xl shimmer bg-surface-hover" />
-        ))}
+      <div className="flex items-center justify-center min-h-screen">
+        <span className="loading loading-spinner loading-lg text-brand-500"></span>
       </div>
     }>
       <CandidatesContent />

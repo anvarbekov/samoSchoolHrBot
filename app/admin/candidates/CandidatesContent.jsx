@@ -1,5 +1,4 @@
 'use client'
-// app/admin/candidates/page.jsx
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -70,7 +69,6 @@ function CandidateModal({ candidate, onClose, onStatusUpdate }) {
     }
   }
 
-  const sc = STATUS_COLORS[status] || STATUS_COLORS.new
   const date = candidate.createdAt
     ? new Date(candidate.createdAt).toLocaleString('uz-UZ')
     : '—'
@@ -78,18 +76,11 @@ function CandidateModal({ candidate, onClose, onStatusUpdate }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-enter">
-        {/* Header */}
         <div className="flex items-start gap-4 p-6 border-b border-surface-border">
           {candidate.photoUrl ? (
-            <img
-              src={candidate.photoUrl}
-              alt=""
-              className="w-20 h-20 rounded-2xl object-cover border-2 border-surface-border shrink-0"
-            />
+            <img src={candidate.photoUrl} alt="" className="w-20 h-20 rounded-2xl object-cover border-2 border-surface-border shrink-0" />
           ) : (
-            <div className="w-20 h-20 rounded-2xl bg-brand-600/20 border border-brand-500/20 flex items-center justify-center text-4xl shrink-0">
-              👤
-            </div>
+            <div className="w-20 h-20 rounded-2xl bg-brand-600/20 border border-brand-500/20 flex items-center justify-center text-4xl shrink-0">👤</div>
           )}
           <div className="flex-1 min-w-0">
             <h2 className="font-display text-xl font-bold text-white">{candidate.fullName}</h2>
@@ -97,14 +88,7 @@ function CandidateModal({ candidate, onClose, onStatusUpdate }) {
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <span className="text-xs text-slate-500">{date}</span>
               {candidate.username && (
-                <a
-                  href={`https://t.me/${candidate.username}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-brand-400 hover:underline"
-                >
-                  @{candidate.username}
-                </a>
+                <a href={`https://t.me/${candidate.username}`} target="_blank" rel="noreferrer" className="text-xs text-brand-400 hover:underline">@{candidate.username}</a>
               )}
             </div>
           </div>
@@ -115,7 +99,6 @@ function CandidateModal({ candidate, onClose, onStatusUpdate }) {
           </button>
         </div>
 
-        {/* Info grid */}
         <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
             { label: '🎯 Mutaxassislik', value: candidate.specialty },
@@ -132,33 +115,6 @@ function CandidateModal({ candidate, onClose, onStatusUpdate }) {
           ))}
         </div>
 
-        {/* Files */}
-        {(candidate.cvUrl || candidate.photoUrl) && (
-          <div className="px-6 pb-4 flex gap-3 flex-wrap">
-            {candidate.cvUrl && (
-              <a
-                href={candidate.cvUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600/20 border border-brand-500/30 text-brand-400 text-sm hover:bg-brand-600/30 transition-colors"
-              >
-                📄 CV ko'rish
-              </a>
-            )}
-            {candidate.photoUrl && (
-              <a
-                href={candidate.photoUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-hover border border-surface-border text-slate-300 text-sm hover:bg-surface-card transition-colors"
-              >
-                🖼️ Rasmni ko'rish
-              </a>
-            )}
-          </div>
-        )}
-
-        {/* Status update */}
         <div className="px-6 pb-4 space-y-3">
           <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Status yangilash</p>
           <div className="flex flex-wrap gap-2">
@@ -169,22 +125,13 @@ function CandidateModal({ candidate, onClose, onStatusUpdate }) {
                   key={val}
                   onClick={() => setStatus(val)}
                   className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 border"
-                  style={status === val ? {
-                    background: sc2.bg,
-                    color: sc2.text,
-                    borderColor: sc2.border,
-                  } : {
-                    background: 'transparent',
-                    color: '#64748b',
-                    borderColor: '#2a2a45',
-                  }}
+                  style={status === val ? { background: sc2.bg, color: sc2.text, borderColor: sc2.border } : { background: 'transparent', color: '#64748b', borderColor: '#2a2a45' }}
                 >
                   {label}
                 </button>
               )
             })}
           </div>
-
           <textarea
             value={notes}
             onChange={e => setNotes(e.target.value)}
@@ -194,21 +141,12 @@ function CandidateModal({ candidate, onClose, onStatusUpdate }) {
           />
         </div>
 
-        {/* Actions */}
         <div className="px-6 pb-6 flex items-center justify-between gap-3">
-          <button
-            onClick={handleDelete}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 text-sm transition-colors"
-          >
-            🗑️ O'chirish
-          </button>
+          <button onClick={handleDelete} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 text-sm transition-colors">🗑️ O'chirish</button>
           <div className="flex gap-3">
-            <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-surface-border text-slate-400 hover:text-white text-sm transition-colors">
-              Bekor
-            </button>
+            <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-surface-border text-slate-400 hover:text-white text-sm transition-colors">Bekor</button>
             <button onClick={handleSave} disabled={saving} className="btn-primary">
-              {saving ? <span className="loading loading-spinner loading-sm" /> : '💾'}
-              Saqlash
+              {saving ? <span className="loading loading-spinner loading-sm" /> : '💾'} Saqlash
             </button>
           </div>
         </div>
@@ -217,7 +155,7 @@ function CandidateModal({ candidate, onClose, onStatusUpdate }) {
   )
 }
 
-export default function CandidatesPage() {
+export default function CandidatesContent() {
   const searchParams = useSearchParams()
   const [candidates, setCandidates] = useState([])
   const [loading, setLoading] = useState(true)
@@ -229,11 +167,7 @@ export default function CandidatesPage() {
   const fetchCandidates = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({
-        status: filter,
-        search,
-        limit: '100',
-      })
+      const params = new URLSearchParams({ status: filter, search, limit: '100' })
       const res = await fetch(`/api/candidates?${params}`)
       const data = await res.json()
       setCandidates(data.candidates || [])
@@ -247,7 +181,6 @@ export default function CandidatesPage() {
 
   useEffect(() => { fetchCandidates() }, [fetchCandidates])
 
-  // Auto-open candidate from URL param
   useEffect(() => {
     const id = searchParams.get('id')
     if (id && candidates.length > 0) {
@@ -260,29 +193,20 @@ export default function CandidatesPage() {
     if (!newStatus) {
       setCandidates(prev => prev.filter(c => c.id !== id))
     } else {
-      setCandidates(prev =>
-        prev.map(c => c.id === id ? { ...c, status: newStatus, notes } : c)
-      )
+      setCandidates(prev => prev.map(c => c.id === id ? { ...c, status: newStatus, notes } : c))
     }
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl font-bold text-white">Nomzodlar</h1>
           <p className="text-slate-400 mt-1">{total} ta ariza topildi</p>
         </div>
-        <button
-          onClick={fetchCandidates}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-surface-border text-slate-400 hover:text-white hover:border-brand-500/50 text-sm transition-all"
-        >
-          🔄 Yangilash
-        </button>
+        <button onClick={fetchCandidates} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-surface-border text-slate-400 hover:text-white hover:border-brand-500/50 text-sm transition-all">🔄 Yangilash</button>
       </div>
 
-      {/* Search and filter */}
       <div className="glass-card p-4 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
@@ -299,11 +223,7 @@ export default function CandidatesPage() {
             <button
               key={f.value}
               onClick={() => setFilter(f.value)}
-              className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all whitespace-nowrap ${
-                filter === f.value
-                  ? 'bg-brand-600 border-brand-500 text-white'
-                  : 'bg-surface-hover border-surface-border text-slate-400 hover:text-white'
-              }`}
+              className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all whitespace-nowrap ${filter === f.value ? 'bg-brand-600 border-brand-500 text-white' : 'bg-surface-hover border-surface-border text-slate-400 hover:text-white'}`}
             >
               {f.label}
             </button>
@@ -311,19 +231,15 @@ export default function CandidatesPage() {
         </div>
       </div>
 
-      {/* Table */}
       <div className="glass-card overflow-hidden">
         {loading ? (
           <div className="p-8 space-y-3">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 rounded-xl shimmer bg-surface-hover" />
-            ))}
+            {[...Array(5)].map((_, i) => <div key={i} className="h-16 rounded-xl shimmer bg-surface-hover" />)}
           </div>
         ) : candidates.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-slate-600">
             <span className="text-6xl mb-4">📭</span>
             <p className="text-lg font-medium text-slate-400">Nomzodlar topilmadi</p>
-            <p className="text-sm mt-1">Filter yoki qidiruvni o'zgartiring</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -331,66 +247,27 @@ export default function CandidatesPage() {
               <thead>
                 <tr className="border-b border-surface-border text-left">
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nomzod</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Mutaxassislik</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Hudud</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Staj</th>
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">Fayllar</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
                 {candidates.map(c => {
                   const sc = STATUS_COLORS[c.status] || STATUS_COLORS.new
                   return (
-                    <tr
-                      key={c.id}
-                      onClick={() => setSelected(c)}
-                      className="table-row-hover"
-                    >
+                    <tr key={c.id} onClick={() => setSelected(c)} className="table-row-hover cursor-pointer">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {c.photoUrl ? (
-                            <img src={c.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-surface-border shrink-0" />
-                          ) : (
-                            <div className="w-9 h-9 rounded-full bg-brand-600/20 border border-brand-500/20 flex items-center justify-center text-base shrink-0">
-                              👤
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{c.fullName}</p>
-                            <p className="text-xs text-slate-500 truncate">
-                              {new Date(c.createdAt).toLocaleDateString('uz-UZ')}
-                            </p>
+                          <div className="w-9 h-9 rounded-full bg-brand-600/20 flex items-center justify-center">👤</div>
+                          <div>
+                            <p className="text-sm font-medium text-white">{c.fullName}</p>
+                            <p className="text-xs text-slate-500">{c.specialty}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 hidden md:table-cell">
-                        <p className="text-sm text-slate-300 truncate max-w-[180px]">{c.specialty}</p>
-                        <p className="text-xs text-slate-500 truncate max-w-[180px]">{c.targetPosition}</p>
-                      </td>
-                      <td className="px-6 py-4 hidden lg:table-cell">
-                        <p className="text-sm text-slate-400">{c.region}</p>
-                      </td>
-                      <td className="px-6 py-4 hidden lg:table-cell">
-                        <p className="text-xs text-slate-400">{c.experience}</p>
-                      </td>
                       <td className="px-6 py-4">
-                        <span
-                          className="status-badge"
-                          style={{ background: sc.bg, color: sc.text, border: `1px solid ${sc.border}` }}
-                        >
+                        <span className="px-2 py-1 rounded text-xs" style={{ background: sc.bg, color: sc.text }}>
                           {STATUS_LABELS[c.status] || c.status}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 hidden sm:table-cell">
-                        <div className="flex gap-2">
-                          {c.cvUrl && (
-                            <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-brand-600/20 text-xs" title="CV bor">📄</span>
-                          )}
-                          {c.photoUrl && (
-                            <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-purple-600/20 text-xs" title="Rasm bor">🖼️</span>
-                          )}
-                        </div>
                       </td>
                     </tr>
                   )
@@ -401,14 +278,7 @@ export default function CandidatesPage() {
         )}
       </div>
 
-      {/* Modal */}
-      {selected && (
-        <CandidateModal
-          candidate={selected}
-          onClose={() => setSelected(null)}
-          onStatusUpdate={handleStatusUpdate}
-        />
-      )}
+      {selected && <CandidateModal candidate={selected} onClose={() => setSelected(null)} onStatusUpdate={handleStatusUpdate} />}
     </div>
   )
 }
