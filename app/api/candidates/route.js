@@ -1,70 +1,70 @@
-// app/api/candidates/route.js
+// app/api/notify-candidate/route.js
 import { adminDb } from '@/lib/firebase-admin'
+import { sendMessage } from '@/lib/bot'
 import { NextResponse } from 'next/server'
 
-export async function GET(request) {
+export async function POST(request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
-    const search = searchParams.get('search')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const page = parseInt(searchParams.get('page') || '1')
+    const { candidateId, message, status } = await request.json()
 
-    let query = adminDb.collection('candidates').orderBy('createdAt', 'desc')
-
-    if (status && status !== 'all') {
-      query = query.where('status', '==', status)
+    // Get candidate from DB
+    const doc = await adminDb.collection('candidates').doc(candidateId).get()
+    if (!doc.exists) {
+      return NextResponse.json({ error: 'Nomzod topilmadi' }, { status: 404 })
     }
 
-    const snapshot = await query.limit(200).get()
-    let candidates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    const candidate = doc.data()
+    const userId = candidate.userId
 
-    // Filter by search
-    if (search) {
-      const s = search.toLowerCase()
-      candidates = candidates.filter(c =>
-        c.fullName?.toLowerCase().includes(s) ||
-        c.specialty?.toLowerCase().includes(s) ||
-        c.targetPosition?.toLowerCase().includes(s) ||
-        c.region?.toLowerCase().includes(s)
-      )
+    if (!userId) {
+      return NextResponse.json({ error: 'Nomzodning Telegram ID si yo\'q' }, { status: 400 })
     }
 
-    const total = candidates.length
-    const paginated = candidates.slice((page - 1) * limit, page * limit)
+    // Status emoji map
+    const statusEmoji = {
+      new: '🆕',
+      reviewing: '👀',
+      interview: '🤝',
+      hired: '✅',
+      rejected: '❌',
+    }
 
-    return NextResponse.json({ candidates: paginated, total, page, limit })
-  } catch (error) {
-    console.error('Candidates fetch error:', error)
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
-  }
-}
+    const statusLabel = {
+      new: 'Yangi',
+      reviewing: "Ko'rib chiqilmoqda",
+      interview: 'Intervyuga taklif etildi',
+      hired: 'Qabul qilindi',
+      rejected: 'Rad etildi',
+    }
 
-export async function PATCH(request) {
-  try {
-    const { id, status, notes } = await request.json()
+    // Build notification message
+    const emoji = statusEmoji[status] || '📢'
+    const label = statusLabel[status] || status
 
-    const ref = adminDb.collection('candidates').doc(id)
-    await ref.update({
-      status,
-      ...(notes ? { notes } : {}),
-      updatedAt: new Date().toISOString(),
+    let text =
+      `${emoji} <b>Samo School HR - Ariza holati yangilandi</b>\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 <b>${candidate.fullName}</b>\n` +
+      `🆔 Ariza: <code>${candidateId.slice(0, 8).toUpperCase()}</code>\n` +
+      `📌 <b>Holat:</b> ${emoji} ${label}\n`
+
+    if (message && message.trim()) {
+      text += `\n💬 <b>HR Izoh:</b>\n${message.trim()}\n`
+    }
+
+    text += `\n━━━━━━━━━━━━━━━━━━━━\n🏫 <i>Samo School HR</i>`
+
+    await sendMessage(userId, text)
+
+    // Save notification to DB
+    await adminDb.collection('candidates').doc(candidateId).update({
+      lastNotified: new Date().toISOString(),
+      lastNotifyMessage: message,
     })
 
     return NextResponse.json({ ok: true })
   } catch (error) {
-    return NextResponse.json({ error: 'Update failed' }, { status: 500 })
-  }
-}
-
-export async function DELETE(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-
-    await adminDb.collection('candidates').doc(id).delete()
-    return NextResponse.json({ ok: true })
-  } catch (error) {
-    return NextResponse.json({ error: 'Delete failed' }, { status: 500 })
+    console.error('Notify error:', error)
+    return NextResponse.json({ error: 'Xabar yuborishda xatolik' }, { status: 500 })
   }
 }

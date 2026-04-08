@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 export function middleware(request) {
   const { pathname } = request.nextUrl
 
-  // Bularni hech qachon tekshirma - to'g'ridan o'tkazib yubor
+  // Public - hech qachon tekshirmasdan o'tkazib yubor
   if (
     pathname === '/api/webhook' ||
     pathname.startsWith('/api/webhook') ||
@@ -15,7 +15,7 @@ export function middleware(request) {
     return NextResponse.next()
   }
 
-  // Faqat admin sahifalarini tekshir
+  // Admin sahifalarini tekshir
   if (pathname.startsWith('/admin') || pathname.startsWith('/api/')) {
     const session = request.cookies.get('admin_session')?.value
     const secret = process.env.NEXTAUTH_SECRET
