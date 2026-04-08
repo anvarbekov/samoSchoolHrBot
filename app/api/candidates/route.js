@@ -68,3 +68,44 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Xabar yuborishda xatolik' }, { status: 500 })
   }
 }
+
+
+// app/api/candidates/route.js faylining oxiriga qo'shing
+
+export async function PATCH(request) {
+  try {
+    const { id, status, notes } = await request.json()
+    
+    if (!id) {
+      return NextResponse.json({ error: 'ID topilmadi' }, { status: 400 })
+    }
+
+    await adminDb.collection('candidates').doc(id).update({
+      status,
+      notes,
+      updatedAt: new Date().toISOString()
+    })
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('PATCH Error:', error)
+    return NextResponse.json({ error: 'Yangilashda xatolik' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID topilmadi' }, { status: 400 })
+    }
+
+    await adminDb.collection('candidates').doc(id).delete()
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('DELETE Error:', error)
+    return NextResponse.json({ error: 'O‘chirishda xatolik' }, { status: 500 })
+  }
+}
