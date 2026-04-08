@@ -1,10 +1,9 @@
-// middleware.js
 import { NextResponse } from 'next/server'
 
 export function middleware(request) {
   const { pathname } = request.nextUrl
 
-  // Public paths
+  // Public paths - bularni tekshirmasdan o'tkazib yubor
   if (
     pathname.startsWith('/api/webhook') ||
     pathname.startsWith('/login') ||
@@ -14,7 +13,12 @@ export function middleware(request) {
     return NextResponse.next()
   }
 
-  // Check admin auth
+  // Login API ni ham o'tkazib yubor
+  if (pathname === '/api/auth/login') {
+    return NextResponse.next()
+  }
+
+  // Admin sahifalarini tekshir
   if (pathname.startsWith('/admin') || pathname.startsWith('/api/')) {
     const session = request.cookies.get('admin_session')?.value
     const secret = process.env.NEXTAUTH_SECRET
