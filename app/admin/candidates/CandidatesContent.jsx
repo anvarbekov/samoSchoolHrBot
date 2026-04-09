@@ -1,102 +1,84 @@
 'use client'
-// app/admin/candidates/page.jsx
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 
-const STATUS_COLORS = {
-  new: { bg: 'rgba(82,101,245,0.15)', text: '#818cf8', border: 'rgba(82,101,245,0.3)' },
-  reviewing: { bg: 'rgba(251,191,36,0.15)', text: '#fbbf24', border: 'rgba(251,191,36,0.3)' },
-  interview: { bg: 'rgba(6,214,160,0.15)', text: '#06d6a0', border: 'rgba(6,214,160,0.3)' },
-  hired: { bg: 'rgba(52,211,153,0.15)', text: '#34d399', border: 'rgba(52,211,153,0.3)' },
-  rejected: { bg: 'rgba(248,113,113,0.15)', text: '#f87171', border: 'rgba(248,113,113,0.3)' },
+const SC = {
+  new:       { bg: 'rgba(82,101,245,0.15)',  text: '#818cf8', border: 'rgba(82,101,245,0.3)' },
+  reviewing: { bg: 'rgba(251,191,36,0.15)',  text: '#fbbf24', border: 'rgba(251,191,36,0.3)' },
+  interview: { bg: 'rgba(6,214,160,0.15)',   text: '#06d6a0', border: 'rgba(6,214,160,0.3)' },
+  hired:     { bg: 'rgba(52,211,153,0.15)',  text: '#34d399', border: 'rgba(52,211,153,0.3)' },
+  rejected:  { bg: 'rgba(248,113,113,0.15)', text: '#f87171', border: 'rgba(248,113,113,0.3)' },
 }
 
 const STATUS_LABELS = {
-  new: '🆕 Yangi',
+  new:       '🆕 Yangi',
   reviewing: "👀 Ko'rib chiqilmoqda",
   interview: '🤝 Intervyu',
-  hired: '✅ Qabul qilindi',
-  rejected: '❌ Rad etildi',
+  hired:     '✅ Qabul qilindi',
+  rejected:  '❌ Rad etildi',
 }
 
 const FILTERS = [
-  { value: 'all', label: 'Barchasi' },
-  { value: 'new', label: '🆕 Yangi' },
+  { value: 'all',       label: 'Barchasi' },
+  { value: 'new',       label: '🆕 Yangi' },
   { value: 'reviewing', label: "👀 Ko'rib chiqilmoqda" },
   { value: 'interview', label: '🤝 Intervyu' },
-  { value: 'hired', label: '✅ Qabul' },
-  { value: 'rejected', label: '❌ Rad' },
+  { value: 'hired',     label: '✅ Qabul' },
+  { value: 'rejected',  label: '❌ Rad' },
 ]
 
-// Quick message templates
-const MSG_TEMPLATES = {
-  reviewing: "Arizangiz qabul qilindi va ko'rib chiqilmoqda. Tez orada siz bilan bog'lanamiz.",
-  interview: "Siz intervyuga taklif etildingiz! Iltimos, HR bilan bog'laning yoki javob kutib turing.",
-  hired: "Tabriklaymiz! Siz Samo School maktabiga qabul qilindingiz. Tez orada shartnoma uchun bog'lanamiz.",
-  rejected: "Arizangiz ko'rib chiqildi. Afsuski, hozircha sizga mos lavozim topilmadi. Kelajakda omad tilaymiz!",
-}
+const TEMPLATES = [
+  {
+    label: "👀 Ko'rib chiqilmoqda",
+    status: 'reviewing',
+    text: "Hurmatli nomzod, arizangiz qabul qilindi va ko'rib chiqilmoqda. Tez orada siz bilan bog'lanamiz.",
+  },
+  {
+    label: '🤝 Intervyuga chaqiriq',
+    status: 'interview',
+    text: "Hurmatli nomzod, siz intervyuga taklif etildingiz! Iltimos, quyidagi raqamga qo'ng'iroq qiling yoki xabar yuboring: +998 XX XXX XX XX",
+  },
+  {
+    label: '✅ Qabul qilindi',
+    status: 'hired',
+    text: "Tabriklaymiz! Siz Samo School maktabiga qabul qilindingiz. Ish boshlash sanasi va shartnoma uchun tez orada bog'lanamiz.",
+  },
+  {
+    label: '❌ Rad etildi',
+    status: 'rejected',
+    text: "Hurmatli nomzod, arizangiz ko'rib chiqildi. Afsuski, hozircha sizga mos bo'sh ish o'rni topilmadi. Kelajakda omad tilaymiz!",
+  },
+  {
+    label: "📋 Qo'shimcha hujjat",
+    status: null,
+    text: "Hurmatli nomzod, arizangizni ko'rib chiqdik. Iltimos, qo'shimcha hujjatlarni yuboring: diplom nusxasi, tajribani tasdiqlovchi hujjat.",
+  },
+  {
+    label: '📅 Uchrashuv vaqti',
+    status: null,
+    text: "Hurmatli nomzod, uchrashuv vaqtini belgiladik. Sana: ___ kuni soat ___:00 da. Manzil: Samo School, ___.",
+  },
+]
 
+// ── Modal ─────────────────────────────────────────────────────────
 function CandidateModal({ candidate, onClose, onStatusUpdate }) {
-  const [status, setStatus] = useState(candidate.status)
-  const [notes, setNotes] = useState(candidate.notes || '')
-  const [msgText, setMsgText] = useState('')
-  const [sendMsg, setSendMsg] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [sending, setSending] = useState(false)
+  const [status, setStatus]           = useState(candidate.status)
+  const [notes, setNotes]             = useState(candidate.notes || '')
+  const [msgText, setMsgText]         = useState('')
+  const [willSendMsg, setWillSendMsg] = useState(false)
+  const [saving, setSaving]           = useState(false)
+  const [sending, setSending]         = useState(false)
+  const [msgHistory, setMsgHistory]   = useState(candidate.messages || [])
 
-  // Auto-fill message when status changes
-  function handleStatusChange(val) {
-    setStatus(val)
-    if (MSG_TEMPLATES[val]) {
-      setMsgText(MSG_TEMPLATES[val])
-      setSendMsg(true)
-    }
+  function applyTemplate(tpl) {
+    setMsgText(tpl.text)
+    if (tpl.status) setStatus(tpl.status)
+    setWillSendMsg(true)
   }
 
-  async function handleSave() {
-    setSaving(true)
-    try {
-      // 1. Update status
-      const res = await fetch('/api/candidates', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: candidate.id, status, notes }),
-      })
-      if (!res.ok) throw new Error('Status yangilashda xatolik')
-
-      // 2. Send message to candidate if checked
-      if (sendMsg && msgText.trim()) {
-        setSending(true)
-        const msgRes = await fetch('/api/notify-candidate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ candidateId: candidate.id, message: msgText, status }),
-        })
-        if (msgRes.ok) {
-          toast.success('Xabar nomzodga yuborildi! 📨')
-        } else {
-          toast.error("Xabar yuborishda xatolik (lekin status saqlandi)")
-        }
-        setSending(false)
-      }
-
-      toast.success('Saqlandi! ✅')
-      onStatusUpdate(candidate.id, status, notes)
-      onClose()
-    } catch (err) {
-      toast.error(err.message || 'Xatolik yuz berdi')
-    } finally {
-      setSaving(false)
-      setSending(false)
-    }
-  }
-
-  async function handleSendOnly() {
-    if (!msgText.trim()) {
-      toast.error('Xabar matnini kiriting!')
-      return
-    }
+  async function handleSendNow() {
+    if (!msgText.trim()) { toast.error('Xabar matnini kiriting!'); return }
     setSending(true)
     try {
       const res = await fetch('/api/notify-candidate', {
@@ -106,165 +88,179 @@ function CandidateModal({ candidate, onClose, onStatusUpdate }) {
       })
       if (res.ok) {
         toast.success('Xabar yuborildi! 📨')
+        setMsgHistory(prev => [...prev, { text: msgText, sentAt: new Date().toISOString(), status }])
         setMsgText('')
+        setWillSendMsg(false)
       } else {
-        toast.error("Xabar yuborishda xatolik")
+        const d = await res.json()
+        toast.error(d.error || 'Xabar yuborishda xatolik')
       }
-    } catch {
-      toast.error('Xatolik')
-    } finally {
-      setSending(false)
-    }
+    } catch { toast.error('Xatolik') }
+    finally { setSending(false) }
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/candidates', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: candidate.id, status, notes }),
+      })
+      if (!res.ok) throw new Error('Saqlashda xatolik')
+
+      if (willSendMsg && msgText.trim()) {
+        const msgRes = await fetch('/api/notify-candidate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ candidateId: candidate.id, message: msgText, status }),
+        })
+        toast.success(msgRes.ok ? 'Saqlandi + xabar yuborildi! ✅' : 'Saqlandi (xabar yuborishda xatolik)')
+      } else {
+        toast.success('Saqlandi! ✅')
+      }
+
+      onStatusUpdate(candidate.id, status, notes)
+      onClose()
+    } catch (err) { toast.error(err.message) }
+    finally { setSaving(false) }
   }
 
   async function handleDelete() {
-    if (!confirm("Ushbu nomzodni o'chirmoqchimisiz?")) return
+    if (!confirm("O'chirmoqchimisiz?")) return
     try {
-      const res = await fetch(`/api/candidates?id=${candidate.id}`, { method: 'DELETE' })
-      if (res.ok) {
-        toast.success("O'chirildi")
-        onStatusUpdate(candidate.id, null)
-        onClose()
-      }
-    } catch {
-      toast.error('Xatolik')
-    }
+      await fetch(`/api/candidates?id=${candidate.id}`, { method: 'DELETE' })
+      toast.success("O'chirildi")
+      onStatusUpdate(candidate.id, null)
+      onClose()
+    } catch { toast.error('Xatolik') }
   }
 
-  const sc = STATUS_COLORS[status] || STATUS_COLORS.new
   const date = candidate.createdAt ? new Date(candidate.createdAt).toLocaleString('uz-UZ') : '—'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-enter">
+      <div className="glass-card w-full max-w-2xl max-h-[92vh] overflow-y-auto modal-enter">
 
         {/* Header */}
         <div className="flex items-start gap-4 p-6 border-b border-surface-border">
-          {candidate.photoUrl ? (
-            <img src={candidate.photoUrl} alt="" className="w-20 h-20 rounded-2xl object-cover border-2 border-surface-border shrink-0" />
-          ) : (
-            <div className="w-20 h-20 rounded-2xl bg-brand-600/20 border border-brand-500/20 flex items-center justify-center text-4xl shrink-0">👤</div>
-          )}
+          <div className="w-16 h-16 rounded-2xl bg-brand-600/20 border border-brand-500/20 flex items-center justify-center text-3xl shrink-0">👤</div>
           <div className="flex-1 min-w-0">
             <h2 className="font-display text-xl font-bold text-white">{candidate.fullName}</h2>
             <p className="text-slate-400 mt-0.5">{candidate.specialty}</p>
-            <div className="flex items-center gap-3 mt-2 flex-wrap">
+            <div className="flex flex-wrap gap-3 mt-2">
               <span className="text-xs text-slate-500">{date}</span>
-              {candidate.username && (
-                <a href={`https://t.me/${candidate.username}`} target="_blank" rel="noreferrer"
-                  className="text-xs text-brand-400 hover:underline">
-                  @{candidate.username}
-                </a>
-              )}
               {candidate.phone && (
-                <a href={`tel:${candidate.phone}`} className="text-xs text-emerald-400 hover:underline">
-                  📱 {candidate.phone}
+                <a href={`tel:${candidate.phone}`} className="text-xs text-emerald-400 hover:underline">📱 {candidate.phone}</a>
+              )}
+              {candidate.username && (
+                <a href={`https://t.me/${candidate.username}`} target="_blank" rel="noreferrer" className="text-xs text-brand-400 hover:underline">
+                  🔗 @{candidate.username}
                 </a>
               )}
             </div>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-white p-1 shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Info grid */}
-        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Info */}
+        <div className="p-6 grid grid-cols-2 gap-3">
           {[
             { label: '🎯 Mutaxassislik', value: candidate.specialty },
-            { label: '⏱️ Ish staji', value: candidate.experience },
-            { label: '🏢 Hozirgi ish joyi', value: candidate.currentWork },
-            { label: '💼 Istalgan lavozim', value: candidate.targetPosition },
-            { label: '📍 Hudud', value: candidate.region },
-            { label: '📱 Telefon', value: candidate.phone },
-            { label: '🔗 Telegram', value: candidate.username ? '@' + candidate.username : null },
-            { label: '🆔 Ariza ID', value: candidate.id?.slice(0, 8).toUpperCase() },
-          ].map(item => item.value ? (
-            <div key={item.label} className="bg-surface-hover rounded-xl p-4">
+            { label: '📱 Telefon',       value: candidate.phone },
+            { label: '🔗 Telegram',      value: candidate.username ? '@' + candidate.username : null },
+            { label: '🆔 Ariza ID',      value: candidate.id?.slice(0, 8).toUpperCase() },
+          ].filter(i => i.value).map(item => (
+            <div key={item.label} className="bg-surface-hover rounded-xl p-3">
               <p className="text-xs text-slate-500 mb-1">{item.label}</p>
               <p className="text-sm font-medium text-white">{item.value}</p>
             </div>
-          ) : null)}
+          ))}
         </div>
 
-        {/* Files */}
-        {(candidate.cvUrl || candidate.photoUrl) && (
-          <div className="px-6 pb-4 flex gap-3 flex-wrap">
-            {candidate.cvUrl && (
-              <a href={candidate.cvUrl} target="_blank" rel="noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600/20 border border-brand-500/30 text-brand-400 text-sm hover:bg-brand-600/30 transition-colors">
-                📄 CV ko'rish
-              </a>
-            )}
-            {candidate.photoUrl && (
-              <a href={candidate.photoUrl} target="_blank" rel="noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-hover border border-surface-border text-slate-300 text-sm hover:bg-surface-card transition-colors">
-                🖼️ Rasmni ko'rish
-              </a>
-            )}
+        {/* CV */}
+        {candidate.cvUrl && (
+          <div className="px-6 pb-4">
+            <a href={candidate.cvUrl} target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600/20 border border-brand-500/30 text-brand-400 text-sm hover:bg-brand-600/30 transition-colors font-medium">
+              📄 CV ni ko'rish / Yuklab olish
+            </a>
           </div>
         )}
 
-        {/* Status update */}
+        {/* Status */}
         <div className="px-6 pb-4 space-y-3">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status yangilash</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</p>
           <div className="flex flex-wrap gap-2">
             {Object.entries(STATUS_LABELS).map(([val, label]) => {
-              const sc2 = STATUS_COLORS[val]
+              const c = SC[val]
               return (
-                <button key={val} onClick={() => handleStatusChange(val)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 border"
-                  style={status === val ? { background: sc2.bg, color: sc2.text, borderColor: sc2.border }
+                <button key={val} onClick={() => setStatus(val)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-medium border transition-all"
+                  style={status === val
+                    ? { background: c.bg, color: c.text, borderColor: c.border }
                     : { background: 'transparent', color: '#64748b', borderColor: '#2a2a45' }}>
                   {label}
                 </button>
               )
             })}
           </div>
-
-          {/* Notes */}
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
-            placeholder="Admin uchun ichki izoh (nomzodga ko'rinmaydi)..."
-            className="w-full bg-surface-hover border border-surface-border rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all resize-none" />
+            placeholder="Ichki izoh (nomzodga ko'rinmaydi)..."
+            className="w-full bg-surface-hover border border-surface-border rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-brand-500/50 transition-all resize-none" />
         </div>
 
-        {/* Send message to candidate */}
-        <div className="px-6 pb-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">📨 Nomzodga Telegram xabar</p>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={sendMsg} onChange={e => setSendMsg(e.target.checked)}
-                className="checkbox checkbox-primary checkbox-sm" />
-              <span className="text-xs text-slate-400">Saqlashda yuborish</span>
-            </label>
-          </div>
+        {/* Xabar yuborish */}
+        <div className="px-6 pb-4 space-y-3 border-t border-surface-border pt-4">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">📨 Nomzodga Telegram xabar yuborish</p>
 
-          {/* Template buttons */}
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(MSG_TEMPLATES).map(([key, val]) => (
-              <button key={key} onClick={() => { setMsgText(val); setSendMsg(true) }}
-                className="text-xs px-2.5 py-1.5 rounded-lg border border-surface-border text-slate-400 hover:text-white hover:border-brand-500/50 transition-all">
-                {STATUS_LABELS[key]}
+          {/* Shablonlar */}
+          <div className="grid grid-cols-2 gap-2">
+            {TEMPLATES.map((tpl, i) => (
+              <button key={i} onClick={() => applyTemplate(tpl)}
+                className="text-left px-3 py-2.5 rounded-xl border border-surface-border bg-surface-hover hover:border-brand-500/40 hover:bg-surface-card transition-all group">
+                <p className="text-xs font-medium text-slate-300 group-hover:text-white">{tpl.label}</p>
               </button>
             ))}
           </div>
 
-          <div className="relative">
-            <textarea value={msgText} onChange={e => setMsgText(e.target.value)} rows={3}
-              placeholder="Nomzodga yuboriladigan xabar matni..."
-              className="w-full bg-surface-hover border border-surface-border rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 transition-all resize-none" />
+          {/* Matn */}
+          <textarea value={msgText} onChange={e => setMsgText(e.target.value)} rows={4}
+            placeholder="Xabar matni... (shablon tanlang yoki o'zingiz yozing)"
+            className="w-full bg-surface-hover border border-surface-border rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition-all resize-none" />
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <button onClick={handleSendNow} disabled={sending || !msgText.trim()}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/30 text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              {sending ? <span className="loading loading-spinner loading-xs" /> : '📨'}
+              Hozir yuborish
+            </button>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={willSendMsg} onChange={e => setWillSendMsg(e.target.checked)}
+                className="checkbox checkbox-primary checkbox-sm" />
+              <span className="text-xs text-slate-400">Saqlashda ham yuborish</span>
+            </label>
           </div>
 
-          <button onClick={handleSendOnly} disabled={sending || !msgText.trim()}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-            {sending ? <span className="loading loading-spinner loading-xs" /> : '📨'}
-            Hozir yuborish
-          </button>
+          {/* Xabarlar tarixi */}
+          {msgHistory.length > 0 && (
+            <div className="space-y-2 mt-1">
+              <p className="text-xs text-slate-500">Yuborilgan xabarlar:</p>
+              {msgHistory.map((m, i) => (
+                <div key={i} className="bg-surface-hover rounded-xl px-3 py-2 text-xs text-slate-400 border border-surface-border">
+                  <span className="text-slate-500">{new Date(m.sentAt).toLocaleString('uz-UZ')} — </span>
+                  {m.text.slice(0, 90)}{m.text.length > 90 ? '...' : ''}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Actions */}
+        {/* Footer */}
         <div className="px-6 pb-6 flex items-center justify-between gap-3 border-t border-surface-border pt-4">
           <button onClick={handleDelete}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 text-sm transition-colors">
@@ -275,40 +271,38 @@ function CandidateModal({ candidate, onClose, onStatusUpdate }) {
               className="px-4 py-2.5 rounded-xl border border-surface-border text-slate-400 hover:text-white text-sm transition-colors">
               Bekor
             </button>
-            <button onClick={handleSave} disabled={saving}
-              className="btn-primary">
+            <button onClick={handleSave} disabled={saving} className="btn-primary">
               {saving ? <span className="loading loading-spinner loading-sm" /> : '💾'}
-              {sendMsg && msgText ? 'Saqlash + Yuborish' : 'Saqlash'}
+              {willSendMsg && msgText ? 'Saqlash + Yuborish' : 'Saqlash'}
             </button>
           </div>
         </div>
+
       </div>
     </div>
   )
 }
 
-export default function CandidatesPage() {
-  const searchParams = useSearchParams()
-  const [candidates, setCandidates] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('all')
-  const [selected, setSelected] = useState(null)
-  const [total, setTotal] = useState(0)
+// ── Asosiy sahifa ─────────────────────────────────────────────────
+export default function CandidatesContent() {
+  const searchParams                  = useSearchParams()
+  const [candidates, setCandidates]   = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [search, setSearch]           = useState('')
+  const [filter, setFilter]           = useState('all')
+  const [selected, setSelected]       = useState(null)
+  const [total, setTotal]             = useState(0)
 
   const fetchCandidates = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ status: filter, search, limit: '100' })
-      const res = await fetch(`/api/candidates?${params}`)
-      const data = await res.json()
-      setCandidates(data.candidates || [])
-      setTotal(data.total || 0)
-    } catch {
-      toast.error("Ma'lumotlarni yuklashda xatolik")
-    } finally {
-      setLoading(false)
-    }
+      const p = new URLSearchParams({ status: filter, search, limit: '100' })
+      const res = await fetch(`/api/candidates?${p}`)
+      const d = await res.json()
+      setCandidates(d.candidates || [])
+      setTotal(d.total || 0)
+    } catch { toast.error("Yuklab bo'lmadi") }
+    finally { setLoading(false) }
   }, [filter, search])
 
   useEffect(() => { fetchCandidates() }, [fetchCandidates])
@@ -322,34 +316,32 @@ export default function CandidatesPage() {
   }, [searchParams, candidates])
 
   function handleStatusUpdate(id, newStatus, notes) {
-    if (!newStatus) {
-      setCandidates(prev => prev.filter(c => c.id !== id))
-    } else {
-      setCandidates(prev => prev.map(c => c.id === id ? { ...c, status: newStatus, notes } : c))
-    }
+    if (!newStatus) setCandidates(prev => prev.filter(c => c.id !== id))
+    else setCandidates(prev => prev.map(c => c.id === id ? { ...c, status: newStatus, notes } : c))
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl font-bold text-white">Nomzodlar</h1>
-          <p className="text-slate-400 mt-1">{total} ta ariza topildi</p>
+          <p className="text-slate-400 mt-1">{total} ta ariza</p>
         </div>
         <button onClick={fetchCandidates}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-surface-border text-slate-400 hover:text-white hover:border-brand-500/50 text-sm transition-all">
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-surface-border text-slate-400 hover:text-white text-sm transition-all">
           🔄 Yangilash
         </button>
       </div>
 
-      {/* Search and filter */}
+      {/* Search + Filter */}
       <div className="glass-card p-4 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Ism, mutaxassislik, hudud bo'yicha qidirish..."
-            className="w-full bg-surface-hover border border-surface-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all" />
+            placeholder="Ism, mutaxassislik bo'yicha qidirish..."
+            className="w-full bg-surface-hover border border-surface-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 transition-all" />
         </div>
         <div className="flex gap-2 flex-wrap">
           {FILTERS.map(f => (
@@ -370,63 +362,53 @@ export default function CandidatesPage() {
             {[...Array(5)].map((_, i) => <div key={i} className="h-16 rounded-xl shimmer bg-surface-hover" />)}
           </div>
         ) : candidates.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-slate-600">
+          <div className="flex flex-col items-center justify-center py-24">
             <span className="text-6xl mb-4">📭</span>
-            <p className="text-lg font-medium text-slate-400">Nomzodlar topilmadi</p>
-            <p className="text-sm mt-1">Filter yoki qidiruvni o'zgartiring</p>
+            <p className="text-slate-400 font-medium">Nomzodlar topilmadi</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-surface-border text-left">
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nomzod</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Yo'nalish</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Hudud</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Telefon</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">Fayllar</th>
+                <tr className="border-b border-surface-border">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Nomzod</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Mutaxassislik</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Telefon</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">CV</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
                 {candidates.map(c => {
-                  const sc = STATUS_COLORS[c.status] || STATUS_COLORS.new
+                  const sc = SC[c.status] || SC.new
                   return (
                     <tr key={c.id} onClick={() => setSelected(c)} className="table-row-hover">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {c.photoUrl ? (
-                            <img src={c.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-surface-border shrink-0" />
-                          ) : (
-                            <div className="w-9 h-9 rounded-full bg-brand-600/20 border border-brand-500/20 flex items-center justify-center text-base shrink-0">👤</div>
-                          )}
+                          <div className="w-9 h-9 rounded-full bg-brand-600/20 border border-brand-500/20 flex items-center justify-center text-base shrink-0">👤</div>
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-white truncate">{c.fullName}</p>
-                            <p className="text-xs text-slate-500 truncate">{new Date(c.createdAt).toLocaleDateString('uz-UZ')}</p>
+                            <p className="text-xs text-slate-500">{new Date(c.createdAt).toLocaleDateString('uz-UZ')}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 hidden md:table-cell">
-                        <p className="text-sm text-slate-300 truncate max-w-[200px]">{c.targetPosition}</p>
-                        <p className="text-xs text-slate-500 truncate max-w-[200px]">{c.specialty}</p>
-                      </td>
-                      <td className="px-6 py-4 hidden lg:table-cell">
-                        <p className="text-xs text-slate-400">{c.region}</p>
+                        <p className="text-sm text-slate-300 truncate max-w-[200px]">{c.specialty}</p>
                       </td>
                       <td className="px-6 py-4 hidden lg:table-cell">
                         <p className="text-xs text-slate-400">{c.phone || '—'}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="status-badge" style={{ background: sc.bg, color: sc.text, border: `1px solid ${sc.border}` }}>
+                        <span className="status-badge text-xs"
+                          style={{ background: sc.bg, color: sc.text, border: `1px solid ${sc.border}` }}>
                           {STATUS_LABELS[c.status] || c.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 hidden sm:table-cell">
-                        <div className="flex gap-2">
-                          {c.cvUrl && <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-brand-600/20 text-xs" title="CV bor">📄</span>}
-                          {c.photoUrl && <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-purple-600/20 text-xs" title="Rasm bor">🖼️</span>}
-                          {c.lastNotified && <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-emerald-600/20 text-xs" title="Xabar yuborilgan">📨</span>}
-                        </div>
+                        {c.cvUrl
+                          ? <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-brand-600/20 text-sm" title="CV bor">📄</span>
+                          : <span className="text-xs text-slate-600">—</span>
+                        }
                       </td>
                     </tr>
                   )
