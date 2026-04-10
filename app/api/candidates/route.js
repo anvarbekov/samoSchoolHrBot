@@ -1,94 +1,57 @@
-// app/api/notify-candidate/route.js
+// app/api/candidates/route.js
 import { adminDb } from '@/lib/firebase-admin'
-import { sendMessage } from '@/lib/bot'
 import { NextResponse } from 'next/server'
 
-export async function POST(request) {
+export async function GET(request) {
   try {
-    const { candidateId, message, status } = await request.json()
+    const { searchParams } = new URL(request.url)
+    const status = searchParams.get('status')
+    const search = searchParams.get('search') || ''
+    const limit = parseInt(searchParams.get('limit') || '100')
 
-    // Get candidate from DB
-    const doc = await adminDb.collection('candidates').doc(candidateId).get()
-    if (!doc.exists) {
-      return NextResponse.json({ error: 'Nomzod topilmadi' }, { status: 404 })
+    let query = adminDb.collection('candidates').orderBy('createdAt', 'desc')
+
+    if (status && status !== 'all') {
+      query = query.where('status', '==', status)
     }
 
-    const candidate = doc.data()
-    const userId = candidate.userId
+    const snapshot = await query.limit(200).get()
+    let candidates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Nomzodning Telegram ID si yo\'q' }, { status: 400 })
+    if (search) {
+      const s = search.toLowerCase()
+      candidates = candidates.filter(c =>
+        c.fullName?.toLowerCase().includes(s) ||
+        c.specialty?.toLowerCase().includes(s) ||
+        c.phone?.includes(s)
+      )
     }
 
-    // Status emoji map
-    const statusEmoji = {
-      new: '🆕',
-      reviewing: '👀',
-      interview: '🤝',
-      hired: '✅',
-      rejected: '❌',
-    }
+    const total = candidates.length
+    const paginated = candidates.slice(0, limit)
 
-    const statusLabel = {
-      new: 'Yangi',
-      reviewing: "Ko'rib chiqilmoqda",
-      interview: 'Intervyuga taklif etildi',
-      hired: 'Qabul qilindi',
-      rejected: 'Rad etildi',
-    }
-
-    // Build notification message
-    const emoji = statusEmoji[status] || '📢'
-    const label = statusLabel[status] || status
-
-    let text =
-      `${emoji} <b>Samo School HR - Ariza holati yangilandi</b>\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n` +
-      `👤 <b>${candidate.fullName}</b>\n` +
-      `🆔 Ariza: <code>${candidateId.slice(0, 8).toUpperCase()}</code>\n` +
-      `📌 <b>Holat:</b> ${emoji} ${label}\n`
-
-    if (message && message.trim()) {
-      text += `\n💬 <b>HR Izoh:</b>\n${message.trim()}\n`
-    }
-
-    text += `\n━━━━━━━━━━━━━━━━━━━━\n🏫 <i>Samo School HR</i>`
-
-    await sendMessage(userId, text)
-
-    // Save notification to DB
-    await adminDb.collection('candidates').doc(candidateId).update({
-      lastNotified: new Date().toISOString(),
-      lastNotifyMessage: message,
-    })
-
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ candidates: paginated, total })
   } catch (error) {
-    console.error('Notify error:', error)
-    return NextResponse.json({ error: 'Xabar yuborishda xatolik' }, { status: 500 })
+    console.error('GET candidates error:', error)
+    return NextResponse.json({ error: 'Xatolik' }, { status: 500 })
   }
 }
-
-
-// app/api/candidates/route.js faylining oxiriga qo'shing
 
 export async function PATCH(request) {
   try {
     const { id, status, notes } = await request.json()
-    
-    if (!id) {
-      return NextResponse.json({ error: 'ID topilmadi' }, { status: 400 })
-    }
+
+    if (!id) return NextResponse.json({ error: 'ID topilmadi' }, { status: 400 })
 
     await adminDb.collection('candidates').doc(id).update({
       status,
       notes,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     })
 
     return NextResponse.json({ ok: true })
   } catch (error) {
-    console.error('PATCH Error:', error)
+    console.error('PATCH error:', error)
     return NextResponse.json({ error: 'Yangilashda xatolik' }, { status: 500 })
   }
 }
@@ -98,14 +61,12 @@ export async function DELETE(request) {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
-    if (!id) {
-      return NextResponse.json({ error: 'ID topilmadi' }, { status: 400 })
-    }
+    if (!id) return NextResponse.json({ error: 'ID topilmadi' }, { status: 400 })
 
     await adminDb.collection('candidates').doc(id).delete()
     return NextResponse.json({ ok: true })
   } catch (error) {
-    console.error('DELETE Error:', error)
-    return NextResponse.json({ error: 'O‘chirishda xatolik' }, { status: 500 })
+    console.error('DELETE error:', error)
+    return NextResponse.json({ error: "O'chirishda xatolik" }, { status: 500 })
   }
 }
